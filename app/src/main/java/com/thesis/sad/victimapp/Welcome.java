@@ -8,6 +8,7 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.ActivityCompat;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.DialogTitle;
 import android.util.Log;
 import android.view.View;
 import android.widget.Button;
@@ -68,7 +69,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
     private static int UPDATE_INTERVAL = 5000;
     private static int FATEST_INTERVAL = 3000;
     private static int DISPLACEMENT = 10;
-    GeoFire geoFire;
+    public GeoFire geoFire;
     private DatabaseReference databaseReference;
     private Marker mUserMarker;
     private ImageView imgexpdable;
@@ -92,7 +93,6 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
         setContentView(R.layout.activity_welcome);
 
 
-        // Obtain the SupportMapFragment and get notified when the map is ready to be used.
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
         mapFragment.getMapAsync(this);
@@ -132,11 +132,13 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
     }
 
     private void updateFirebaseToken() {
-        FirebaseDatabase db = FirebaseDatabase.getInstance();
-        DatabaseReference tokens = db.getReference(Common.token_tbl);
-        Token token = new Token(FirebaseInstanceId.getInstance().getToken());
-        tokens.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
-                .setValue(token);
+
+            FirebaseDatabase db = FirebaseDatabase.getInstance();
+            DatabaseReference tokens = db.getReference(Common.token_tbl);
+            Token token = new Token(FirebaseInstanceId.getInstance().getToken());
+            tokens.child(FirebaseAuth.getInstance().getCurrentUser().getUid())
+                    .setValue(token);
+
 
     }
 
@@ -262,20 +264,21 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
             final double latitude = mLastLocation.getLatitude();
             final double longitude = mLastLocation.getLongitude();
 
-            geoFire.setLocation(FirebaseAuth.getInstance().getCurrentUser().getUid(), new GeoLocation(latitude, longitude)
-                    , new GeoFire.CompletionListener() {
-                        @Override
-                        public void onComplete(String key, DatabaseError error) {
-                            if (mUserMarker != null)
-                                mUserMarker.remove();
-                                mUserMarker = mMap.addMarker(new MarkerOptions()
-                                        .position(new LatLng(latitude, longitude))
-                                        .title("Me"));
-                                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 18.0f));
-                        loadAllAvailableAmbulance();
+            if (mUserMarker != null)
+                mUserMarker.remove();
+                mUserMarker = mMap.addMarker(new MarkerOptions()
+                        .position(new LatLng(latitude, longitude))
+                        .title(String.format("Me")));
 
-                        }
-                    });
+                mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 18.0f));
+
+                loadAllAvailableAmbulance();
+
+
+
+
+
+
         }
         else
         {
