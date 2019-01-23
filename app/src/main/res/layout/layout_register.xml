@@ -38,7 +38,7 @@
             android:id="@+id/edittext_name"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:hint="Barangay Name"
+            android:hint="Name"
             android:inputType="text"
             android:text=""
             android:textSize="20sp" />

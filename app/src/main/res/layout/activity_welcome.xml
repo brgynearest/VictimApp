@@ -24,17 +24,10 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content">
-            <ImageView
-                android:id="@+id/expandable"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:src="@drawable/ic_up"
-                android:layout_alignParentRight="true"
-                />
+
             <Button
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/expandable"
                 android:text="GET HELP "
                 android:id="@+id/GetHelpRequest"
                 android:layout_margin="10dp"

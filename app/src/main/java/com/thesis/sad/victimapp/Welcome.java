@@ -1,6 +1,7 @@
 package com.thesis.sad.victimapp;
 
 import android.Manifest;
+import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.support.annotation.NonNull;
@@ -10,6 +11,9 @@ import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DialogTitle;
 import android.util.Log;
+import android.view.ContextMenu;
+import android.view.Menu;
+import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -50,6 +54,9 @@ import com.thesis.sad.victimapp.Model.Token;
 import com.thesis.sad.victimapp.Model.Victim;
 import com.thesis.sad.victimapp.Remote.IFCMService;
 
+import java.util.HashMap;
+import java.util.Map;
+
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -72,8 +79,6 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
     public GeoFire geoFire;
     private DatabaseReference databaseReference;
     private Marker mUserMarker;
-    private ImageView imgexpdable;
-    private BottomSheetVictim mbottomSheet;
     private Button btnPickUp;
     private Location mLastLocation;
 
@@ -85,6 +90,10 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
     private static final int LIMIT = 3;
 
     IFCMService mservices;
+
+    DatabaseReference ambulanceAvailable;
+
+
 
 
     @Override
@@ -103,14 +112,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
        /* databaseReference = FirebaseDatabase.getInstance().getReference("Victim");
         geoFire = new GeoFire(databaseReference);*/
 
-        imgexpdable = findViewById(R.id.expandable);
-        mbottomSheet = BottomSheetVictim.newInstance("VictimBottomSheet");
-        imgexpdable.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mbottomSheet.show(getSupportFragmentManager(),mbottomSheet.getTag());
-            }
-        });
+
         btnPickUp = findViewById(R.id.GetHelpRequest);
         btnPickUp.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -126,8 +128,33 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
             }
         });
 
+
         setUpLocation();
         updateFirebaseToken();
+
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+
+        getMenuInflater().inflate(R.menu.signout_menu, menu);
+        return true;
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+
+        int id =item.getItemId();
+        switch (id){
+            case R.id.signout:
+                backhome();
+        }
+        return true;
+    }
+
+    private void backhome() {
+        startActivity(new Intent(Welcome.this,MainActivity.class));
+        finish();
 
     }
 
@@ -151,14 +178,20 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                             for(DataSnapshot postsnapshot:dataSnapshot.getChildren()){
                                 Token token= postsnapshot.getValue(Token.class);
                                 String json_lat_lang = new Gson().toJson(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
+                                String victimToken = FirebaseInstanceId.getInstance().getToken();
 
-                                Notification data = new Notification("BRGYTRACKING",json_lat_lang);
+                                Notification data = new Notification(victimToken,json_lat_lang);
                                 Sender content = new Sender(token.getToken(),data);
+
+                                /*Map<String,String> contents = new HashMap<>();
+                                contents.put("Victim",ambulanceToken);*/
+                                /*contents.put("lat",String.valueOf())*/
 
                                 mservices.sendMessage(content)
                                         .enqueue(new Callback<FCMResponse>() {
                                             @Override
-                                            public void onResponse(Call<FCMResponse> call, Response<FCMResponse> response) {
+                                            public void onResponse(@NonNull Call<FCMResponse> call, @NonNull Response<FCMResponse> response) {
+                                                assert response.body() != null;
                                                 if(response.body().success == 1)
                                                     Toast.makeText(Welcome.this, "Request Sent", Toast.LENGTH_SHORT).show();
                                                 else
@@ -261,6 +294,22 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
         mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mgoogleApiClient);
         if (mLastLocation!=null) {
 
+            ambulanceAvailable = FirebaseDatabase.getInstance().getReference(Common.available_Ambulance);
+            ambulanceAvailable.addValueEventListener(new ValueEventListener() {
+                @Override
+                public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
+                    //If the the driver changed their availability
+                    loadAllAvailableAmbulance();
+
+
+                }
+
+                @Override
+                public void onCancelled(@NonNull DatabaseError databaseError) {
+
+                }
+            });
+
             final double latitude = mLastLocation.getLatitude();
             final double longitude = mLastLocation.getLongitude();
 
@@ -287,8 +336,14 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
         }
 
     private void loadAllAvailableAmbulance() {
-            //load all available ambulance in 3km area
 
+        mMap.clear();
+
+        mMap.addMarker(new MarkerOptions().position(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()))
+                .title("Me"));
+
+
+            //load all available ambulance in 3km area
         final DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference(Common.available_Ambulance);
         GeoFire gf = new GeoFire(databaseReference);
         GeoQuery geoq = gf.queryAtLocation(new GeoLocation(mLastLocation.getLatitude(),mLastLocation.getLongitude()),distance);
@@ -306,8 +361,8 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                                     .position(new LatLng(location.latitude,location.longitude))
                                         .flat(true)
                                         .title(victim.getName())
-                                        .snippet("Phone: " +victim.getPhone())
-                                        .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_YELLOW))
+                                        .snippet("PN: " +victim.getPhone())
+                                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ambulance))
                                 );
                             }
 
@@ -365,8 +420,11 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
     @Override
     public void onMapReady(GoogleMap googleMap) {
         mMap = googleMap;
-        mMap.getUiSettings().setZoomControlsEnabled(true);
-        mMap.getUiSettings().setAllGesturesEnabled(true);
+        mMap.setMapType(GoogleMap.MAP_TYPE_NORMAL);
+        mMap.setTrafficEnabled(false);
+        mMap.setIndoorEnabled(false);
+        mMap.setBuildingsEnabled(false);
+        mMap.getUiSettings().setZoomControlsEnabled(false);
         mMap.setInfoWindowAdapter(new CustomInfoWindow(this));
 
     }

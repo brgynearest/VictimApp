@@ -15,10 +15,12 @@ import android.os.Bundle;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.RelativeLayout;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.firebase.geofire.GeoFire;
@@ -37,8 +39,10 @@ import com.google.android.gms.maps.SupportMapFragment;
 import com.google.android.gms.maps.model.LatLng;
 import com.google.android.gms.maps.model.Marker;
 import com.google.android.gms.maps.model.MarkerOptions;
+import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
+import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.AuthResult;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
@@ -57,6 +61,8 @@ public class MainActivity extends AppCompatActivity {
     DatabaseReference victimuser;
     RelativeLayout rootLayout;
 
+    TextView forgotpassword;
+
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -68,6 +74,15 @@ public class MainActivity extends AppCompatActivity {
         victimuser = db.getReference(Common.victim_information);
         registerbtn = findViewById(R.id.btn_register);
         rootLayout = findViewById(R.id.rootLayout);
+
+        forgotpassword = (TextView) findViewById(R.id.forgot_password);
+        forgotpassword.setOnTouchListener(new View.OnTouchListener() {
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                showDialogForgot();
+                return false;
+            }
+        });
 
         signinbtn.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -83,6 +98,54 @@ public class MainActivity extends AppCompatActivity {
         });
 
     }
+
+    private void showDialogForgot() {
+        AlertDialog.Builder alertdialog = new AlertDialog.Builder(MainActivity.this);
+        alertdialog.setTitle("FORGOT PASSWORD");
+        alertdialog.setMessage("Please enter your email address");
+
+        LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
+        View forgot = inflater.inflate(R.layout.layout_forgot_password,null);
+        final EditText editText = forgot.findViewById(R.id.forgottext);
+        alertdialog.setView(forgot);
+
+
+
+        alertdialog.setPositiveButton("RESET", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(final DialogInterface dialog, int which) {
+auth.sendPasswordResetEmail(editText.getText().toString().trim())
+        .addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                dialog.dismiss();
+                Snackbar.make(rootLayout,"Reset password link has been sent",Snackbar.LENGTH_LONG).show();
+
+            }
+        })
+        .addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception e) {
+                dialog.dismiss();
+                Snackbar.make(rootLayout,"" +e.getMessage(),Snackbar.LENGTH_LONG).show();
+            }
+        });
+
+            }
+        });
+                alertdialog.setNegativeButton("CANCEL", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                });
+
+                alertdialog.show();
+
+
+    }
+
+
     private void showLoginDialog() {
         AlertDialog.Builder dialog = new AlertDialog.Builder(this);
         dialog.setTitle("SIGN IN");
