@@ -3,9 +3,19 @@
     xmlns:app="http://schemas.android.com/apk/res-auto"
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
+    android:id="@+id/rlayout"
     android:layout_height="match_parent"
     tools:context=".Welcome">
 
+    <android.support.v7.widget.Toolbar
+        android:id="@+id/toolbar"
+        android:layout_width="match_parent"
+        android:layout_height="?attr/actionBarSize"
+        app:theme="@style/MapTheme"
+        app:popupTheme="@style/MapTheme.AppBarOverlay"
+        android:elevation="4dp">
+
+    </android.support.v7.widget.Toolbar>
     <fragment
         android:id="@+id/map"
         android:name="com.google.android.gms.maps.SupportMapFragment"
@@ -29,6 +39,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="GET HELP "
+                android:background="@drawable/button_sign"
+                android:textColor="#FFFFFF"
                 android:id="@+id/GetHelpRequest"
                 android:layout_margin="10dp"
                 />

@@ -9,9 +9,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
-import android.support.v7.app.AlertDialog;
+import android.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
+import android.support.v7.widget.Toolbar;
 import android.text.TextUtils;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -48,8 +49,12 @@ import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseAuthException;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.rengwuxian.materialedittext.MaterialEditText;
 import com.thesis.sad.victimapp.Common.Common;
 import com.thesis.sad.victimapp.Model.Victim;
+
+import dmax.dialog.SpotsDialog;
+import io.paperdb.Paper;
 
 public class MainActivity extends AppCompatActivity {
     private static final String TAG = "MainActivity";
@@ -68,12 +73,18 @@ public class MainActivity extends AppCompatActivity {
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
+        setSupportActionBar(toolbar);
+
         signinbtn = findViewById(R.id.btn_sign_in);
         auth = FirebaseAuth.getInstance();
         db = FirebaseDatabase.getInstance();
         victimuser = db.getReference(Common.victim_information);
         registerbtn = findViewById(R.id.btn_register);
         rootLayout = findViewById(R.id.rootLayout);
+
+        Paper.init(this);
 
         forgotpassword = (TextView) findViewById(R.id.forgot_password);
         forgotpassword.setOnTouchListener(new View.OnTouchListener() {
@@ -97,16 +108,53 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
+        String user = Paper.book().read(Common.user_field);
+        String pwd = Paper.book().read(Common.pwd_field);
+        if(user!=null && pwd !=null){
+
+            if(!TextUtils.isEmpty(user) && !TextUtils.isEmpty(pwd) ){
+
+                autologin(user,pwd);
+            }
+        }
+
+
+    }
+
+    private void autologin(String user, String pwd) {
+        final android.app.AlertDialog alertDialog = new SpotsDialog(MainActivity.this);
+        alertDialog.show();
+
+
+        auth.signInWithEmailAndPassword(user,pwd)
+                .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
+                    @Override
+                    public void onSuccess(AuthResult authResult) {
+                        alertDialog.dismiss();
+                        startActivity(new Intent(MainActivity.this,Welcome.class));
+                        finish();
+                    }
+                })
+                .addOnFailureListener(new OnFailureListener() {
+                    @Override
+                    public void onFailure(@NonNull Exception e) {
+                        alertDialog.dismiss();
+                        signinbtn.setEnabled(true);
+                        Snackbar.make(rootLayout,""+e.getMessage(),Snackbar.LENGTH_SHORT).show();
+
+                    }
+                });
+
     }
 
     private void showDialogForgot() {
-        AlertDialog.Builder alertdialog = new AlertDialog.Builder(MainActivity.this);
+        android.support.v7.app.AlertDialog.Builder alertdialog = new android.support.v7.app.AlertDialog.Builder(MainActivity.this);
         alertdialog.setTitle("FORGOT PASSWORD");
         alertdialog.setMessage("Please enter your email address");
 
         LayoutInflater inflater = LayoutInflater.from(MainActivity.this);
         View forgot = inflater.inflate(R.layout.layout_forgot_password,null);
-        final EditText editText = forgot.findViewById(R.id.forgottext);
+        final MaterialEditText editText = forgot.findViewById(R.id.forgottext);
         alertdialog.setView(forgot);
 
 
@@ -147,15 +195,16 @@ auth.sendPasswordResetEmail(editText.getText().toString().trim())
 
 
     private void showLoginDialog() {
-        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        android.support.v7.app.AlertDialog.Builder dialog = new android.support.v7.app.AlertDialog.Builder(this);
+
         dialog.setTitle("SIGN IN");
         dialog.setMessage("Please use email to Sign in");
 
         LayoutInflater inflater = LayoutInflater.from(this);
         View login_layout = inflater.inflate(R.layout.layout_login,null);
 
-        final EditText edittext_email = login_layout.findViewById(R.id.edittext_email);
-        final EditText edittext_password = login_layout.findViewById(R.id.edittext_password);
+        final MaterialEditText edittext_email = login_layout.findViewById(R.id.edittext_email);
+        final MaterialEditText edittext_password = login_layout.findViewById(R.id.edittext_password);
 
         dialog.setView(login_layout);
 
@@ -163,27 +212,43 @@ auth.sendPasswordResetEmail(editText.getText().toString().trim())
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
                 dialogInterface.dismiss();
+
                 signinbtn.setEnabled(false);
 
                 if (TextUtils.isEmpty(edittext_email.getText().toString())) {
                     Snackbar.make(rootLayout, "Please enter your email address", Snackbar.LENGTH_SHORT).show();
+                    signinbtn.setEnabled(true);
                     return;
 
                 }
                 if (TextUtils.isEmpty(edittext_password.getText().toString())) {
                     Snackbar.make(rootLayout, "Please enter your password", Snackbar.LENGTH_SHORT).show();
+
+                    signinbtn.setEnabled(true);
                     return;
                 }
 
                 if (edittext_password.getText().toString().length() < 6) {
+                    signinbtn.setEnabled(true);
                     Snackbar.make(rootLayout, "Password too short!", Snackbar.LENGTH_SHORT).show();
                     return;
                 }
-                Toast.makeText(MainActivity.this, "Loading...", Toast.LENGTH_SHORT).show();
+
+/*
+                Snackbar.make(rootLayout, "Loading Please Wait...", 8000).show();*/
+
+
+                final android.app.AlertDialog alertDialog = new SpotsDialog(MainActivity.this);
+                alertDialog.show();
+
+
                 auth.signInWithEmailAndPassword(edittext_email.getText().toString(),edittext_password.getText().toString())
                         .addOnSuccessListener(new OnSuccessListener<AuthResult>() {
                             @Override
                             public void onSuccess(AuthResult authResult) {
+                                alertDialog.dismiss();
+                                Paper.book().write(Common.user_field,edittext_email.getText().toString());
+                                Paper.book().write(Common.pwd_field,edittext_password.getText().toString());
 
                                 startActivity(new Intent(MainActivity.this,Welcome.class));
                                 finish();
@@ -192,9 +257,10 @@ auth.sendPasswordResetEmail(editText.getText().toString().trim())
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-
-                                Snackbar.make(rootLayout,"Failed"+e.getMessage(),Snackbar.LENGTH_SHORT).show();
+                                alertDialog.dismiss();
                                 signinbtn.setEnabled(true);
+                                Snackbar.make(rootLayout,""+e.getMessage(),Snackbar.LENGTH_SHORT).show();
+
                             }
                         });
             }
@@ -211,17 +277,17 @@ auth.sendPasswordResetEmail(editText.getText().toString().trim())
 
 
     private void showRegisterDialog() {
-        AlertDialog.Builder dialog = new AlertDialog.Builder(this);
+        android.support.v7.app.AlertDialog.Builder dialog = new android.support.v7.app.AlertDialog.Builder(this);
         dialog.setTitle("REGISTER");
         dialog.setMessage("Please use email to register");
 
         LayoutInflater inflater = LayoutInflater.from(this);
         View register_layout = inflater.inflate(R.layout.layout_register,null);
 
-        final EditText edittext_email = register_layout.findViewById(R.id.edittext_email);
-        final EditText edittext_password = register_layout.findViewById(R.id.edittext_password);
-        final EditText edittext_name = register_layout.findViewById(R.id.edittext_name);
-        final EditText edittext_phone = register_layout.findViewById(R.id.edittext_phone);
+        final MaterialEditText edittext_email = register_layout.findViewById(R.id.edittext_email);
+        final MaterialEditText edittext_password = register_layout.findViewById(R.id.edittext_password);
+        final MaterialEditText edittext_name = register_layout.findViewById(R.id.edittext_name);
+        final MaterialEditText edittext_phone = register_layout.findViewById(R.id.edittext_phone);
 
         dialog.setView(register_layout);
 
@@ -272,7 +338,7 @@ auth.sendPasswordResetEmail(editText.getText().toString().trim())
                                         .addOnFailureListener(new OnFailureListener() {
                                             @Override
                                             public void onFailure(@NonNull Exception e) {
-                                                Snackbar.make(rootLayout,"Failed in Registration" +e.getMessage(), Snackbar.LENGTH_SHORT).show();
+                                                Snackbar.make(rootLayout,"" +e.getMessage(), Snackbar.LENGTH_LONG).show();
                                             }
                                         });
                             }
@@ -280,7 +346,7 @@ auth.sendPasswordResetEmail(editText.getText().toString().trim())
                         .addOnFailureListener(new OnFailureListener() {
                             @Override
                             public void onFailure(@NonNull Exception e) {
-                                Snackbar.make(rootLayout,"Failed", Snackbar.LENGTH_SHORT).show();
+                                Snackbar.make(rootLayout,"Error: "+e.getMessage(), Snackbar.LENGTH_LONG).show();
                                 Log.d(TAG,"Failed saving on Firebase: "+ e.getMessage());
                             }
                         });

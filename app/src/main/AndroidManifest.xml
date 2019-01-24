@@ -30,17 +30,12 @@
 
         <service android:name=".Service.MyFirebaseIdService">
             <intent-filter>
-                <action android:name="com.google.firebase.INSTANCE_ID_EVENT">
-
-                </action>
+                <action android:name="com.google.firebase.INSTANCE_ID_EVENT"></action>
             </intent-filter>
         </service>
-
         <service android:name=".Service.MyFirebaseMessaging">
             <intent-filter>
-                <action android:name="com.google.firebase.MESSAGING_EVENT">
-
-                </action>
+                <action android:name="com.google.firebase.MESSAGING_EVENT"></action>
             </intent-filter>
         </service>
 
@@ -58,7 +53,9 @@
 
         <activity
             android:name=".Welcome"
-            android:label="@string/title_activity_welcome" />
+            android:label="@string/title_activity_welcome"
+            android:theme="@style/MapTheme"
+            />
     </application>
 
 </manifest>

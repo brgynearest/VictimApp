@@ -1,12 +1,19 @@
 package com.thesis.sad.victimapp;
 
 import android.Manifest;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.pm.PackageManager;
 import android.location.Location;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.support.v7.widget.DialogTitle;
@@ -17,6 +24,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 import android.widget.ImageView;
+import android.widget.RelativeLayout;
 import android.widget.Toast;
 import com.firebase.geofire.GeoFire;
 import com.firebase.geofire.GeoLocation;
@@ -57,6 +65,7 @@ import com.thesis.sad.victimapp.Remote.IFCMService;
 import java.util.HashMap;
 import java.util.Map;
 
+import io.paperdb.Paper;
 import retrofit2.Call;
 import retrofit2.Callback;
 import retrofit2.Response;
@@ -93,14 +102,23 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
 
     DatabaseReference ambulanceAvailable;
 
+    RelativeLayout rlayout;
+    private BroadcastReceiver mCancelReciever = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            btnPickUp.setText("GET HELP");
+            ambulanceid="";
+            isAmbulanceFound= false;
 
+        }
+    };
 
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_welcome);
-
+        rlayout = findViewById(R.id.rlayout);
 
         mapFragment = (SupportMapFragment) getSupportFragmentManager()
                 .findFragmentById(R.id.map);
@@ -108,6 +126,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
 
         mservices = Common.getFCMService();
 
+        LocalBroadcastManager.getInstance(Welcome.this).registerReceiver(mCancelReciever,new IntentFilter(Common.CANCEL_BROADCAST));
 
        /* databaseReference = FirebaseDatabase.getInstance().getReference("Victim");
         geoFire = new GeoFire(databaseReference);*/
@@ -152,7 +171,35 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
         return true;
     }
 
+    @Override
+    public void onBackPressed() {
+        AlertDialog.Builder alerdialog = new AlertDialog.Builder(this);
+        alerdialog
+                .setMessage("Are you sure you want to exit?")
+                .setCancelable(false)
+                .setPositiveButton("Yes", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        finish();
+                    }
+
+                })
+                .setNegativeButton("No", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.cancel();
+                    }
+                });
+        alerdialog.show();
+    }
+
     private void backhome() {
+        Paper.init(this);
+        Paper.book().destroy();
+
+        FirebaseAuth.getInstance().signOut();
+
+
         startActivity(new Intent(Welcome.this,MainActivity.class));
         finish();
 
@@ -171,6 +218,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
 
     private void SendRequestToAmbulance(String ambulanceid) {
             DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token_tbl);
+
             tokens.orderByKey().equalTo(ambulanceid)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -178,10 +226,12 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                             for(DataSnapshot postsnapshot:dataSnapshot.getChildren()){
                                 Token token= postsnapshot.getValue(Token.class);
                                 String json_lat_lang = new Gson().toJson(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
+
                                 String victimToken = FirebaseInstanceId.getInstance().getToken();
 
                                 Notification data = new Notification(victimToken,json_lat_lang);
                                 Sender content = new Sender(token.getToken(),data);
+                                Log.d(TAG, "onDataChange: "+json_lat_lang);
 
                                 /*Map<String,String> contents = new HashMap<>();
                                 contents.put("Victim",ambulanceToken);*/
@@ -193,7 +243,8 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                                             public void onResponse(@NonNull Call<FCMResponse> call, @NonNull Response<FCMResponse> response) {
                                                 assert response.body() != null;
                                                 if(response.body().success == 1)
-                                                    Toast.makeText(Welcome.this, "Request Sent", Toast.LENGTH_SHORT).show();
+                                                    /*Snackbar.make(rlayout, "Calling Ambulance Please Wait...", 8000).show();*/
+                                                    Toast.makeText(Welcome.this, "Help Sent", Toast.LENGTH_SHORT).show();
                                                 else
                                                     Toast.makeText(Welcome.this, "Failed!", Toast.LENGTH_SHORT).show();
                                             }
@@ -299,7 +350,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                 @Override
                 public void onDataChange(@NonNull DataSnapshot dataSnapshot) {
                     //If the the driver changed their availability
-                    loadAllAvailableAmbulance();
+                    loadAllAvailableAmbulance(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
 
 
                 }
@@ -321,7 +372,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
 
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 18.0f));
 
-                loadAllAvailableAmbulance();
+                loadAllAvailableAmbulance(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
 
 
 
@@ -335,18 +386,18 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
         }
         }
 
-    private void loadAllAvailableAmbulance() {
+    private void loadAllAvailableAmbulance(final LatLng location) {
 
         mMap.clear();
 
-        mMap.addMarker(new MarkerOptions().position(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()))
+        mMap.addMarker(new MarkerOptions().position(location)
                 .title("Me"));
 
 
             //load all available ambulance in 3km area
         final DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference(Common.available_Ambulance);
         GeoFire gf = new GeoFire(databaseReference);
-        GeoQuery geoq = gf.queryAtLocation(new GeoLocation(mLastLocation.getLatitude(),mLastLocation.getLongitude()),distance);
+        GeoQuery geoq = gf.queryAtLocation(new GeoLocation(location.latitude,location.longitude),distance);
         geoq.addGeoQueryEventListener(new GeoQueryEventListener() {
             @Override
             public void onKeyEntered(String key, final GeoLocation location) {
@@ -387,7 +438,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
             public void onGeoQueryReady() {
                 if (distance <=LIMIT){ //find all ambulance with 3km range
                     distance++;
-                    loadAllAvailableAmbulance();
+                    loadAllAvailableAmbulance(location);
 
                 }
             }
@@ -495,7 +546,9 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                     isAmbulanceFound=true;
                     ambulanceid=key;
                     btnPickUp.setText("Call Ambulance");
-                    Toast.makeText(Welcome.this, ""+ key, Toast.LENGTH_SHORT).show();
+
+                    /*
+                    Toast.makeText(Welcome.this, ""+ key, Toast.LENGTH_SHORT).show();*/
                 }
 
             }
@@ -513,9 +566,15 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
             @Override
             public void onGeoQueryReady() {
                 //If still not found the brgy ambulance
-                if(!isAmbulanceFound){
+                if(!isAmbulanceFound && radius <LIMIT){
                     radius++;
                     findAmbulance();
+
+                }
+                else{
+                    Toast.makeText(Welcome.this, "No available ambulance near you", Toast.LENGTH_SHORT).show();
+                    btnPickUp.setText("GET HELP");
+
 
                 }
             }

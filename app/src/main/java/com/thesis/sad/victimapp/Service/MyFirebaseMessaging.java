@@ -13,6 +13,7 @@ import android.os.Looper;
 import android.support.annotation.RequiresApi;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.LocalBroadcastManager;
 import android.util.Log;
 import android.view.View;
 import android.widget.Toast;
@@ -21,8 +22,12 @@ import com.google.android.gms.maps.model.LatLng;
 import com.google.firebase.messaging.FirebaseMessagingService;
 import com.google.firebase.messaging.RemoteMessage;
 import com.google.gson.Gson;
+import com.thesis.sad.victimapp.Common.Common;
 import com.thesis.sad.victimapp.Helper.NotificationHelper;
 import com.thesis.sad.victimapp.R;
+
+import java.util.Locale;
+import java.util.Map;
 
 
 public class MyFirebaseMessaging extends FirebaseMessagingService {
@@ -30,10 +35,7 @@ public class MyFirebaseMessaging extends FirebaseMessagingService {
 
     @Override
     public void onMessageReceived(final RemoteMessage remoteMessage) {
-
-        if (remoteMessage.getNotification().equals("Declined"))
-        {
-
+        if(remoteMessage.getNotification().getTitle().equals("Declined")){
             Handler handler = new Handler(Looper.getMainLooper());
             handler.post(new Runnable() {
                 @Override
@@ -41,29 +43,23 @@ public class MyFirebaseMessaging extends FirebaseMessagingService {
 
                     Toast.makeText(MyFirebaseMessaging.this," "+remoteMessage.getNotification()
                             .getBody(),Toast.LENGTH_SHORT).show();
-                    Log.d("FCM",remoteMessage.getNotification().getBody());
-
-
                 }
             });
+            LocalBroadcastManager.getInstance(MyFirebaseMessaging.this).sendBroadcast(new Intent(Common.CANCEL_BROADCAST));
 
         }
-        else if(remoteMessage.getNotification().equals("Arrived")){
-
+        else if(remoteMessage.getNotification().getTitle().equals("Arrived")){
             if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                    showArrivedNotificationAPI26(remoteMessage.getNotification().getBody());
+                showArrivedNotificationAPI26(remoteMessage.getNotification().getBody());
 
 
             }else {
                 showArrivedNotification(remoteMessage.getNotification().getBody());
 
             }
-            
-
 
 
         }
-
 
     }
 

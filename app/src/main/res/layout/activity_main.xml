@@ -7,12 +7,39 @@
     android:id="@+id/rootLayout"
     tools:context=".MainActivity">
 
+<LinearLayout
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:orientation="vertical"
+    android:layout_marginTop="40dp"
+    android:gravity="center_horizontal"
+    >
+
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:text="BARANGAY NEAREST AMBULANCE TRACKING"
+        android:textSize="36sp" />
+
+
+
+</LinearLayout>
+    <TextView
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="V I C T I M    A P P "
+        android:layout_above="@+id/sign"
+        android:layout_centerHorizontal="true"
+        android:layout_marginBottom="20dp"
+        android:textSize="25sp"
+        />
 
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_alignParentBottom="true"
-        android:layout_marginBottom="80dp"
+        android:id="@+id/sign"
+        android:layout_above="@+id/forgot_password"
         android:layout_marginLeft="20dp"
         android:layout_marginRight="20dp"
         android:orientation="horizontal"
@@ -20,15 +47,19 @@
 
         <Button
             android:id="@+id/btn_sign_in"
-            android:layout_width="200dp"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_marginRight="6dp"
+            android:background="@drawable/button_sign"
+            android:textColor="#FFFFFF"
             android:layout_weight="1"
             android:text="Sign In" />
 
         <Button
             android:id="@+id/btn_register"
-            android:layout_width="200dp"
+            android:layout_width="0dp"
+            android:textColor="#FFFFFF"
+            android:background="@drawable/button_sign"
             android:layout_height="wrap_content"
             android:layout_marginRight="6dp"
             android:layout_weight="1"
@@ -39,8 +70,11 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_alignParentBottom="true"
-            android:text="FORGOT PASSWORD?"
+            android:textSize="16dp"
+            android:text="Forgot Password?"
+            android:textColor="@color/forgot_color"
             android:textAlignment="center"
+            android:layout_marginTop="20dp"
             android:layout_centerHorizontal="true"
             android:layout_marginBottom="20dp"
 

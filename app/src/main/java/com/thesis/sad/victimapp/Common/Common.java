@@ -9,8 +9,16 @@ public class Common {
     public static final String victim_information = "Victim";
     public static final String pickup_request = "helprequest";
 
+    public static final String CANCEL_BROADCAST = "cancel_pickup";
+
     public static final String token_tbl = "Tokens";
     public static final String fcmURL = "https://fcm.googleapis.com/";
+    public static final String user_field = "email";
+    public static final String pwd_field = "password";
+
+    
+    
+    public static final double mlasLocation = 0;
 
 
     public static IFCMService getFCMService()
