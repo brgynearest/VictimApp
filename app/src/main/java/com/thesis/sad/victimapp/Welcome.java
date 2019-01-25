@@ -218,7 +218,6 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
 
     private void SendRequestToAmbulance(String ambulanceid) {
             DatabaseReference tokens = FirebaseDatabase.getInstance().getReference(Common.token_tbl);
-
             tokens.orderByKey().equalTo(ambulanceid)
                     .addListenerForSingleValueEvent(new ValueEventListener() {
                         @Override
@@ -232,10 +231,6 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                                 Notification data = new Notification(victimToken,json_lat_lang);
                                 Sender content = new Sender(token.getToken(),data);
                                 Log.d(TAG, "onDataChange: "+json_lat_lang);
-
-                                /*Map<String,String> contents = new HashMap<>();
-                                contents.put("Victim",ambulanceToken);*/
-                                /*contents.put("lat",String.valueOf())*/
 
                                 mservices.sendMessage(content)
                                         .enqueue(new Callback<FCMResponse>() {
@@ -534,9 +529,10 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
     private void findAmbulance() {
         DatabaseReference ambulance = FirebaseDatabase.getInstance().getReference(Common.available_Ambulance);
         GeoFire mmgeofire = new GeoFire(ambulance);
-        GeoQuery geoQuery = mmgeofire.queryAtLocation(new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()),radius);
+        final GeoQuery geoQuery = mmgeofire.queryAtLocation(new GeoLocation(mLastLocation.getLatitude(), mLastLocation.getLongitude()),radius);
         geoQuery.removeAllListeners();
         geoQuery.addGeoQueryEventListener(new GeoQueryEventListener() {
+
             @Override
             public void onKeyEntered(String key, GeoLocation location) {
                 //If the nearest barangay amblance is found
@@ -572,8 +568,13 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
 
                 }
                 else{
-                    Toast.makeText(Welcome.this, "No available ambulance near you", Toast.LENGTH_SHORT).show();
-                    btnPickUp.setText("GET HELP");
+                    if(!isAmbulanceFound){
+                        Toast.makeText(Welcome.this, "No available ambulance near you", Toast.LENGTH_SHORT).show();
+                        btnPickUp.setText("GET HELP");
+                        geoQuery.removeAllListeners();
+
+                    }
+
 
 
                 }
