@@ -49,14 +49,22 @@ public class MyFirebaseMessaging extends FirebaseMessagingService {
 
         }
         else if(remoteMessage.getNotification().getTitle().equals("Arrived")){
-            if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
-                showArrivedNotificationAPI26(remoteMessage.getNotification().getBody());
+            Toast.makeText(this, "The Ambulance have arrived near you", Toast.LENGTH_LONG).show();
+            Handler handler = new Handler(getMainLooper());
+            handler.post(new Runnable() {
+                @Override
+                public void run() {
+                    if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.O){
+                        showArrivedNotificationAPI26(remoteMessage.getNotification().getBody());
 
 
-            }else {
-                showArrivedNotification(remoteMessage.getNotification().getBody());
+                    }else {
+                        showArrivedNotification(remoteMessage.getNotification().getBody());
 
-            }
+                    }
+                }
+            });
+
 
 
         }
@@ -79,7 +87,7 @@ public class MyFirebaseMessaging extends FirebaseMessagingService {
         NotificationCompat.Builder builder = new NotificationCompat.Builder(getBaseContext());
 
         builder.setAutoCancel(true)
-                .setDefaults(Notification.DEFAULT_LIGHTS|Notification.DEFAULT_SOUND)
+                .setDefaults(Notification.DEFAULT_LIGHTS|Notification.DEFAULT_VIBRATE|Notification.DEFAULT_SOUND)
                 .setWhen(System.currentTimeMillis())
                 .setSmallIcon(R.drawable.ic_locate)
                 .setContentTitle("Arrived")

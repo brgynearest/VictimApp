@@ -122,7 +122,8 @@ public class MainActivity extends AppCompatActivity {
     }
 
     private void autologin(String user, String pwd) {
-        final android.app.AlertDialog alertDialog = new SpotsDialog(MainActivity.this);
+        final android.app.AlertDialog alertDialog = new SpotsDialog.Builder().setContext(MainActivity.this).build();
+        alertDialog.setMessage("Logging in...");
         alertDialog.show();
 
 
@@ -238,7 +239,8 @@ auth.sendPasswordResetEmail(editText.getText().toString().trim())
                 Snackbar.make(rootLayout, "Loading Please Wait...", 8000).show();*/
 
 
-                final android.app.AlertDialog alertDialog = new SpotsDialog(MainActivity.this);
+                final android.app.AlertDialog alertDialog = new SpotsDialog.Builder().setContext(MainActivity.this).build();
+                alertDialog.setMessage("Logging in...");
                 alertDialog.show();
 
 

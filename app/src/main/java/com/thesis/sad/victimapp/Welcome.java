@@ -242,6 +242,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                                                     Toast.makeText(Welcome.this, "Help Sent", Toast.LENGTH_SHORT).show();
                                                 else
                                                     Toast.makeText(Welcome.this, "Failed!", Toast.LENGTH_SHORT).show();
+
                                             }
 
                                             @Override
@@ -363,15 +364,13 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                 mUserMarker.remove();
                 mUserMarker = mMap.addMarker(new MarkerOptions()
                         .position(new LatLng(latitude, longitude))
-                        .title(String.format("Me")));
+                        .title(String.format("You"))
+                        .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_me))
+                        );
 
                 mMap.animateCamera(CameraUpdateFactory.newLatLngZoom(new LatLng(latitude, longitude), 18.0f));
 
                 loadAllAvailableAmbulance(new LatLng(mLastLocation.getLatitude(),mLastLocation.getLongitude()));
-
-
-
-
 
 
         }
@@ -386,7 +385,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
         mMap.clear();
 
         mMap.addMarker(new MarkerOptions().position(location)
-                .title("Me"));
+                .title("You").icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_me)));
 
 
             //load all available ambulance in 3km area
@@ -407,7 +406,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                                     .position(new LatLng(location.latitude,location.longitude))
                                         .flat(true)
                                         .title(victim.getName())
-                                        .snippet("PN: " +victim.getPhone())
+                                        .snippet("Plate #: " +victim.getPhone())
                                         .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ambulance))
                                 );
                             }
@@ -515,7 +514,7 @@ public class Welcome extends AppCompatActivity implements OnMapReadyCallback,Goo
                     .title("Pickup Here")
                     .snippet("")
                     .position(new LatLng(mLastLocation.getLatitude(), mLastLocation.getLongitude()))
-                    .icon(BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_RED)));
+                    .icon(BitmapDescriptorFactory.fromResource(R.mipmap.ic_me)));
 
             mUserMarker.showInfoWindow();
 
